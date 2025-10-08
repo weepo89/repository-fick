@@ -38,9 +38,22 @@ def retry(times=3, backoff_factor=0.5, allowed_exceptions=(Exception,)):
         return wrapper
     return deco
 
-@retry(times=3, backoff_factor=0.5, allowed_exceptions=(requests.RequestException,))
+@retry(times=3, backoff_factor=1.0, allowed_exceptions=(requests.RequestException,))
 def safe_request(session:Optional[Session], method:str, url:str, **kw)->Any:
-    sess=session or default_session()
-    r=sess.request(method,url,timeout=10,**kw); r.raise_for_status()
-    try: return r.json()
-    except Exception: return r.text
+    sess = session or default_session()
+    try:
+        r = sess.request(method, url, timeout=30, **kw)
+        r.raise_for_status()
+        try:
+            return r.json()
+        except Exception:
+            return r.text
+    except requests.Timeout:
+        logger.error(f"Timeout connecting to {url}")
+        raise
+    except requests.ConnectionError:
+        logger.error(f"Failed to connect to {url}")
+        raise
+    except requests.RequestException as e:
+        logger.error(f"Request failed: {str(e)}")
+        raise

@@ -10,22 +10,53 @@ logging.basicConfig(level=logging.INFO)
 
 def main():
     print("🚀 Starting Thermite Tactical Middleware 4.0")
-    wtwd = WTWD(os.getenv("WTWD_USERNAME"), os.getenv("WTWD_PASSWORD"))
-    wtd = WTD(os.getenv("WTD_USERNAME"), os.getenv("WTD_PASSWORD"))
-    tireco = Tireco(os.getenv("TIRECO_API_KEY"))
+    combined = []
+    
+    try:
+        print("🔍 Fetching data from WTWD...")
+        wtwd = WTWD(os.getenv("WTWD_USERNAME"), os.getenv("WTWD_PASSWORD"))
+        wtwd_tires = wtwd.fetch_tires("225/45R17")
+        print(f"✅ WTWD fetched: {len(wtwd_tires)} tires")
+        combined.extend(wtwd_tires)
+    except Exception as e:
+        print(f"❌ Error fetching from WTWD: {str(e)}")
+    
+    try:
+        print("🔍 Fetching data from WTD...")
+        wtd = WTD(os.getenv("WTD_USERNAME"), os.getenv("WTD_PASSWORD"))
+        wtd_tires = wtd.fetch_tires("225/45R17")
+        print(f"✅ WTD fetched: {len(wtd_tires)} tires")
+        combined.extend(wtd_tires)
+    except Exception as e:
+        print(f"❌ Error fetching from WTD: {str(e)}")
+    
+    try:
+        print("🔍 Fetching data from Tireco...")
+        tireco = Tireco(os.getenv("TIRECO_API_KEY"))
+        tireco_tires = tireco.fetch_tires("225/45R17")
+        print(f"✅ Tireco fetched: {len(tireco_tires)} tires")
+        combined.extend(tireco_tires)
+    except Exception as e:
+        print(f"❌ Error fetching from Tireco: {str(e)}")
 
-    print("🔍 Fetching data from distributors...")
-    combined = wtwd.fetch_tires("225/45R17") + wtd.fetch_tires("225/45R17") + tireco.fetch_tires("225/45R17")
-    print(f"✅ Total fetched: {len(combined)}")
+    print(f"✅ Total tires fetched: {len(combined)}")
 
-    sync = ShopifySync(os.getenv("SHOPIFY_API_KEY"), os.getenv("SHOPIFY_PASSWORD"), os.getenv("SHOPIFY_STORE_URL"))
-    sync.sync_products(combined)
+    if combined:
+        try:
+            sync = ShopifySync(os.getenv("SHOPIFY_API_KEY"), os.getenv("SHOPIFY_PASSWORD"), os.getenv("SHOPIFY_STORE_URL"))
+            sync.sync_products(combined)
+            print("✅ Products synced to Shopify")
+        except Exception as e:
+            print(f"❌ Error syncing to Shopify: {str(e)}")
 
-    with open("output.json", "w") as f:
-        json.dump([t.model_dump() for t in combined], f, indent=2)
-    print("✅ Output saved to output.json")
+        try:
+            with open("output.json", "w") as f:
+                json.dump([t.model_dump() for t in combined], f, indent=2)
+            print("✅ Output saved to output.json")
+        except Exception as e:
+            print(f"❌ Error saving output: {str(e)}")
+    else:
+        print("⚠️ No tires were fetched from any distributor")
 
 if __name__ == "__main__":
     main()
-
-@hi added by mike

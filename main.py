@@ -4,7 +4,7 @@ from scraper.wtwd_scraper import WTWD
 from scraper.wtd_scraper import WTD
 from scraper.tireco_scraper import Tireco
 from shopify_sync.sync import ShopifySync
-
+print("HI")
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
@@ -14,7 +14,11 @@ def main():
     
     try:
         print("🔍 Fetching data from WTWD...")
-        wtwd = WTWD(os.getenv("WTWD_USERNAME"), os.getenv("WTWD_PASSWORD"))
+        #wtwd = WTWD(os.getenv("WTWD_USERNAME"), os.getenv("WTWD_PASSWORD"))
+        # Hardcoded test credentials (remove ASAP)
+        wtwd = WTWD("thermite", "tactical")
+
+
         wtwd_tires = wtwd.fetch_tires("225/45R17")
         print(f"✅ WTWD fetched: {len(wtwd_tires)} tires")
         combined.extend(wtwd_tires)
